@@ -1,4 +1,4 @@
-# ChatRooms
+# ChatRooms-Java
 
 ## Overview
 
