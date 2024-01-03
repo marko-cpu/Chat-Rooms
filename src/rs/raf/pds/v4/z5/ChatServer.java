@@ -1,8 +1,10 @@
 package rs.raf.pds.v4.z5;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
@@ -13,6 +15,7 @@ import rs.raf.pds.v4.z5.messages.InfoMessage;
 import rs.raf.pds.v4.z5.messages.KryoUtil;
 import rs.raf.pds.v4.z5.messages.ListUsers;
 import rs.raf.pds.v4.z5.messages.Login;
+import rs.raf.pds.v4.z5.messages.PrivateMessage;
 import rs.raf.pds.v4.z5.messages.WhoRequest;
 
 
@@ -25,6 +28,7 @@ public class ChatServer implements Runnable{
 	final int portNumber;
 	ConcurrentMap<String, Connection> userConnectionMap = new ConcurrentHashMap<String, Connection>();
 	ConcurrentMap<Connection, String> connectionUserMap = new ConcurrentHashMap<Connection, String>();
+	 private final List<PrivateMessage> privateMessagesList = new CopyOnWriteArrayList<>();
 	
 	public ChatServer(int portNumber) {
 		this.server = new Server();
@@ -61,6 +65,25 @@ public class ChatServer implements Runnable{
 					connection.sendTCP(listUsers);
 					return;
 				}
+				 if (object instanceof PrivateMessage) {
+	                    PrivateMessage privateMessage = (PrivateMessage) object;
+	                    String recipient = privateMessage.getRecipient();
+	                    Connection recipientConnection = userConnectionMap.get(recipient);
+	                    if (recipientConnection != null && recipientConnection.isConnected()) {
+	                        recipientConnection.sendTCP(privateMessage);
+	                        System.out.println("Private message from " + privateMessage.getSender() + " to " + recipient +": " + privateMessage.getContent());
+	                        connection.sendTCP(new InfoMessage("Private message sent to " + recipient));
+	                        privateMessagesList.add(privateMessage);
+	                    } else {
+	                        connection.sendTCP(new InfoMessage("User " + recipient + " is not online."));
+	                    }
+	                    return;
+	                }
+				  if (object instanceof InfoMessage) {
+	                    InfoMessage message = (InfoMessage) object;
+	                    showTextToAll("Server: " + message.getTxt(), connection);
+	                    return;
+	                }
 			}
 			
 			public void disconnected(Connection connection) {

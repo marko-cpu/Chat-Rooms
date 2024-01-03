@@ -3,6 +3,7 @@ package rs.raf.pds.v4.z5;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.StringJoiner;
 
 import com.esotericsoftware.kryonet.Client;
 import com.esotericsoftware.kryonet.Connection;
@@ -13,6 +14,7 @@ import rs.raf.pds.v4.z5.messages.InfoMessage;
 import rs.raf.pds.v4.z5.messages.KryoUtil;
 import rs.raf.pds.v4.z5.messages.ListUsers;
 import rs.raf.pds.v4.z5.messages.Login;
+import rs.raf.pds.v4.z5.messages.PrivateMessage;
 import rs.raf.pds.v4.z5.messages.WhoRequest;
 
 public class ChatClient implements Runnable{
@@ -52,6 +54,11 @@ public class ChatClient implements Runnable{
 					showChatMessage(chatMessage);
 					return;
 				}
+				 if (object instanceof PrivateMessage) {
+	                    PrivateMessage privateMessage = (PrivateMessage) object;
+	                    showPrivateChatMessage(privateMessage);
+	                    return;
+	                }
 
 				if (object instanceof ListUsers) {
 					ListUsers listUsers = (ListUsers)object;
@@ -65,11 +72,8 @@ public class ChatClient implements Runnable{
 					return;
 				}
 				
-				if (object instanceof ChatMessage) {
-					ChatMessage message = (ChatMessage)object;
-					showMessage(message.getUser()+"r:"+message.getTxt());
-					return;
-				}
+
+               
 			}
 			
 			public void disconnected(Connection connection) {
@@ -77,9 +81,15 @@ public class ChatClient implements Runnable{
 			}
 		});
 	}
+	
+    
 	private void showChatMessage(ChatMessage chatMessage) {
 		System.out.println(chatMessage.getUser()+":"+chatMessage.getTxt());
 	}
+	private void showPrivateChatMessage(PrivateMessage privateMessage) {
+    	String message = "Private message from " + privateMessage.getSender() + ": " + privateMessage.getContent();
+    	System.out.println(message);
+    }
 	private void showMessage(String txt) {
 		System.out.println(txt);
 	}
@@ -111,6 +121,8 @@ public class ChatClient implements Runnable{
 	public void connect() throws IOException {
 		client.connect(1000, hostName, portNumber);
 	}
+	
+	 
 	public void run() {
 		
 		try (
@@ -129,7 +141,13 @@ public class ChatClient implements Runnable{
 	            	}
 	            	else if ("WHO".equalsIgnoreCase(userInput)){
 	            		client.sendTCP(new WhoRequest());
-	            	}							
+	            	}	 else if ("PRIVATE".equalsIgnoreCase(userInput)) {
+	                    System.out.print("Enter recipient: ");
+	                    String recipient = stdIn.readLine();
+	                    System.out.print("Enter message: ");
+	                    String messageText = stdIn.readLine();
+	                    sendPrivateMessage(recipient, messageText);
+	            	}
 	            	else {
 	            		ChatMessage message = new ChatMessage(userName, userInput);
 	            		client.sendTCP(message);
@@ -149,6 +167,13 @@ public class ChatClient implements Runnable{
 			client.close();;
 		}
 	}
+	
+
+    public void sendPrivateMessage(String recipient, String messageText) {
+        PrivateMessage privateMessage = new PrivateMessage(userName, messageText, recipient);
+        client.sendTCP(privateMessage);
+    }
+
 	public static void main(String[] args) {
 		if (args.length != 3) {
 		

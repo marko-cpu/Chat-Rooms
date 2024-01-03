@@ -11,5 +11,6 @@ public class KryoUtil {
 		kryo.register(WhoRequest.class);
 		kryo.register(ListUsers.class);
 		kryo.register(InfoMessage.class);
+		kryo.register(PrivateMessage.class);
 	}
 }
