@@ -8,17 +8,17 @@ This is a straightforward chat application. Users can send private messages, cre
 
 - **Private Messaging:** Users can send private messages to each other.
 
-- **Chat Room Creation:** Command to create chat rooms using `Create @room_name`.
+- **Chat Room Creation:** Command to create chat rooms using `Create /room_name`.
 
-- **Invitations to Join Rooms:** Invite other users to join a room with `Invite @room_name @username`.
+- **Invitations to Join Rooms:** Invite other users to join a room with `/Invite room_name username`.
 
-- **List of Chat Rooms:** Users can retrieve a list of all chat rooms with the `ListRooms` command.
+- **List of Chat Rooms:** Users can retrieve a list of all chat rooms with the `/ListRooms` command.
 
-- **Join Chat Room:** Connect to a specific room using the `Join @room_name` command.
+- **Join Chat Room:** Connect to a specific room using the `Join /room_name` command.
 
 - **Message Editing:** Edit previously sent messages with a right-click and notify others.
 
-- **Requesting More Messages:** Users can request additional messages with `GetMoreMessages @chat_room`.
+- **Requesting More Messages:** Users can request additional messages with `GetMoreMessages /chat_room`.
 
 - **Reply Functionality:** Users can reply to messages.
 
