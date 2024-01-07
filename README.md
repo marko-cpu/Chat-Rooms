@@ -31,7 +31,9 @@ This is a straightforward chat application. Users can send private messages, cre
 
 ## Chat Section
 
-![chatapp](image/chatt.png)
+<p align="center">
+  <img src="image/chatt.png" alt="Chat Image">
+</p>
 
 ## Technologies Used
 
