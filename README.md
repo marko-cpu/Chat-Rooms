@@ -23,13 +23,13 @@ This is a straightforward chat application. Users can send private messages, cre
 - **Reply Functionality:** Users can reply to messages.
 
 
-## Login Section
+## The appearance of the login page
 
 <p align="center">
   <img src="image/login.png" alt="login Image">
 </p>
 
-## Chat Section
+## The appearance of the chat app
 
 <p align="center">
   <img src="image/chatt.png" alt="Chat Image">
