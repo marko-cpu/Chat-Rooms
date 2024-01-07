@@ -25,7 +25,9 @@ This is a straightforward chat application. Users can send private messages, cre
 
 ## Login Section
 
-![login section](image/login.png)
+<p align="center">
+  <img src="image/login.png" alt="login Image">
+</p>
 
 ## Chat Section
 
