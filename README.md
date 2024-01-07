@@ -23,7 +23,17 @@ This is a straightforward chat application. Users can send private messages, cre
 - **Reply Functionality:** Users can reply to messages.
 
 
+## Login Section
+
+![login section](image/login.png)
+
+## Chat Section
+
+![chatapp](image/chatt.png)
+
 ## Technologies Used
+
+
 
 - **Java:** 
 - **JavaFX:** 
