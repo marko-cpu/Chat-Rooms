@@ -110,13 +110,14 @@ public class ChatClient implements Runnable{
 		});
 	}
 	
-	private void handleChatMessages(List<ChatMessage> chatMessages) {
+	private void handleChatMessages(List<ChatMessage> chatMessagess) {
         if (chatMessages != null) {
-        	ChatMessage old = chatMessages.get(0);
-        	ChatMessage newer = chatMessages.get(1);
-            ((ChatClient) chatMessages).handleMessageUpdate(old, newer,this.activeRoom);
+        	ChatMessage old = chatMessagess.get(0);
+        	ChatMessage newer = chatMessagess.get(1);
+        	chatMessages.handleMessageUpdate(old, newer,this.activeRoom);
         }
     }
+	
     
 	private void showChatMessage(ChatMessage chatMessage) {
 	     printToGUI("[" + activeRoom + "] " + chatMessage.getUser() + ": " + chatMessage.getTxt());
@@ -152,9 +153,9 @@ public class ChatClient implements Runnable{
 	        }
 	    }
 	    
-	    public void handleMessageUpdate(ChatMessage old,ChatMessage newr,String room) {
+	    public void handleMessageUpdate(ChatMessage old,ChatMessage newer,String room) {
 	        if (chatMessages != null) {
-	            chatMessages.handleMessageUpdate(old, newr, room);
+	            chatMessages.handleMessageUpdate(old, newer, room);
 	        }
 	    }
 	    
@@ -210,13 +211,6 @@ public class ChatClient implements Runnable{
 	            client.sendTCP(userInput.toUpperCase());
 	        } else if (userInput.toUpperCase().startsWith("/JOIN")) {
 	            client.sendTCP(userInput.toUpperCase());
-	        } else if (userInput.toUpperCase().startsWith("/ROOM")) {
-	            String[] parts = userInput.split(" ");
-	            if (parts.length >= 2) {
-	                client.sendTCP(userInput.toUpperCase());
-	            } else {
-	                System.out.println("Use /ROOM <roomName>");
-	            }
 	        } else if (userInput.toUpperCase().startsWith("/INVITE")) {
 	            String[] parts = userInput.split(" ");
 	            if (parts.length == 3) {
@@ -274,13 +268,6 @@ public class ChatClient implements Runnable{
 	                    client.sendTCP(userInput.toUpperCase());
 	                } else if (userInput.toUpperCase().startsWith("/JOIN")) {
 	                    client.sendTCP(userInput.toUpperCase());
-	                } else if (userInput.toUpperCase().startsWith("/ROOM")) {
-	                    String[] parts = userInput.split(" ");
-	                    if (parts.length >= 2) {
-	                        client.sendTCP(userInput.toUpperCase());
-	                    } else {
-	                        System.out.println("Use /ROOM <roomName>");
-	                    }
 	                } else if (userInput.toUpperCase().startsWith("/INVITE")) {
 	                    String[] parts = userInput.split(" ");
 	                    if (parts.length == 3) {

@@ -2,12 +2,12 @@ package rs.raf.pds.v4.z5;
 
 import java.util.Arrays;
 
+
 import java.util.List;
 
 
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -199,20 +199,20 @@ public class ChatApp extends Application implements ChatMessages {
     }
 
     private class MessageCell extends ListCell<String> {
-    /*	private final Button editButton;
+    	private final Button editButton;
     	
         public MessageCell() {		
             editButton = new Button("Edit");
             
-            editButton.setStyle("-fx-background-color: #154c79; -fx-text-fill: white; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 5px;");
+            editButton.setStyle("-fx-background-color: #154c79; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 5px;");
 
             editButton.setOnMouseEntered(e -> {
-            	editButton.setStyle("-fx-background-color: #131b62; -fx-text-fill: white; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 5px;");
+            	editButton.setStyle("-fx-background-color: #131b62; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 5px;");
         	   
         	});
 
             editButton.setOnMouseExited(e -> {
-            	editButton.setStyle("-fx-background-color: #154c79; -fx-text-fill: white; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 5px;");
+            	editButton.setStyle("-fx-background-color: #154c79; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 5px;");
         	    
         	});
          
@@ -221,8 +221,9 @@ public class ChatApp extends Application implements ChatMessages {
     	
     	
         public void handleEditButtonClick() {
-        	return;
-		}*/
+        	  System.out.println("Edit button clicked");
+        	  
+		}
 
 
 		@Override
@@ -242,25 +243,31 @@ public class ChatApp extends Application implements ChatMessages {
                 boolean isClientMessage = messageUsername.equalsIgnoreCase(chatClient.getUserName());
                 
                 if (item.startsWith("Server:")) {
-                	 
+                	
                 	 Font.loadFont(getClass().getResourceAsStream("/fonts/PlayfairDisplay-VariableFont_wght.ttf"), 14);
                 	 messageText.setFont(Font.font("PlayfairDisplay", FontWeight.BOLD, 14));
+                	  editButton.setVisible(false);
+                } else {
+                    editButton.setVisible(true); 
                 }
                 
                 if (isClientMessage) {
                 	Region spacer = new Region();
-                	HBox messageBox = new HBox(messageText, spacer/*, editButton */ );
+                	HBox messageBox = new HBox(messageText, spacer, editButton );
                     HBox.setHgrow(spacer, Priority.ALWAYS);
 
                     setGraphic(messageBox);
                 } else {
                 	
-                	  setStyle("-fx-background-color: #eeeee4; -fx-text-fill: white;");
+                	  setStyle("-fx-background-color: #eeeee4; -fx-text-fill: white; ");
                 	  
                 	  setOnMouseClicked(event -> {
-                          setStyle("-fx-background-color: #bebeb6; -fx-text-fill: white;"); 
+                          setStyle("-fx-background-color: #bebeb6; -fx-text-fill: white; "); 
                       });
-                      setGraphic(new HBox(messageText));
+                	  Region spacer = new Region();
+                	  HBox.setHgrow(spacer, Priority.ALWAYS);
+                      setGraphic(new HBox(messageText,spacer,editButton));
+                      
                     
                 }
             }		
@@ -363,71 +370,10 @@ public class ChatApp extends Application implements ChatMessages {
         alert.setContentText(message);
         alert.showAndWait();
     }
-    
     @Override
-    public void handleMessageUpdate(ChatMessage oldMessage, ChatMessage message, String room) {
-        Platform.runLater(() -> {
-            String messageText = message.format().trim();
-            
-            if (message.getReply()) {
-                handleReplyUpdate(oldMessage, messageText);
-                return;
-            }
+    public void handleMessageUpdate(ChatMessage oldMessage, ChatMessage message, String room) {}
+  
 
-            for (int i = 0; i < messageListView.getItems().size(); i++) {
-                String existingMessage = messageListView.getItems().get(i).trim();
-                String oldMessageFormat = oldMessage.format().trim();
-
-                if (existingMessage.equalsIgnoreCase(oldMessageFormat)) {
-                    messageListView.getItems().set(i, messageText);
-                } else if (existingMessage.contains(oldMessageFormat)) {
-                    String roomAndUser = "((" + chatClient.getActiveRoom() + ") " + message.getUser() + ": ";
-                    messageListView.getItems().set(i, replaceBetweenIndicesAndUpdate(existingMessage, roomAndUser, ")", message.getTxt()));
-                }
-            }
-        });
-    }
-
-    
-    
-    private String replaceBetweenIndicesAndUpdate(String input, String startMarker, String endMarker, String replacement) {
-        int startIndex = input.indexOf(startMarker);
-        int endIndex = input.indexOf(endMarker, startIndex + startMarker.length());
-
-        if (startIndex != -1 && endIndex != -1) {
-            return input.substring(0, startIndex) +
-                   startMarker + replacement + endMarker +
-                   input.substring(endIndex + endMarker.length());
-        }
-
-        return input;
-    }
-
-
-    private void handleReplyUpdate(ChatMessage oldMessage, String updatedMessageText) {
-        Platform.runLater(() -> {
-            ObservableList<String> items = messageListView.getItems();
-
-            for (int i = 0; i < items.size(); i++) {
-                String existingMessage = items.get(i).trim();
-                String oldMessageFormat = oldMessage.format().trim();
-
-                if (existingMessage.equalsIgnoreCase(oldMessageFormat)) {
-                    String pattern = ")\n";
-                    int lastIndex = oldMessageFormat.lastIndexOf(pattern);
-
-                    if (lastIndex != -1) {
-                        String updatedFormat = oldMessageFormat.substring(0, lastIndex + pattern.length()) + updatedMessageText;
-                        items.set(i, updatedFormat);
-                    } else {
-                        items.set(i, updatedMessageText);
-                    }
-
-                    break;
-                }
-            }
-        });
-    }
 
 
 

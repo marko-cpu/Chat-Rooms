@@ -110,24 +110,11 @@ public class ChatServer implements Runnable{
 	                        case "/JOIN":
 	                            if (parts.length >= 2) {
 	                                String roomName = parts[1];
-	                                joinChatRoom(roomName, connection);
+	                                joinAndEnterChatRoom(roomName, connection);
 	                            }
 	                            break;
 	                        case "/LISTROOMS":
 	                            listChatRooms(connection);
-	                            break;
-	                       
-	                        case "/ROOM":
-	                            if (parts.length >= 2) {
-	                                String roomName = parts[1];
-	                                String userName = connectionUserMap.get(connection);
-	                                
-	                                if (userName != null) {
-	                                    setActiveRoom(connection, roomName);
-	                                } else {
-	                                    connection.sendTCP(new InfoMessage("You haven't joined yet."));
-	                                }
-	                            }
 	                            break;
 
 	                        case "/GETMOREMESSAGES":
@@ -145,6 +132,7 @@ public class ChatServer implements Runnable{
 	                                inviteUserToRoom(invitedUser, roomName, connection);
 	                            }
 	                            break;
+	                       
 	                            
 	                   
 	                    }
@@ -156,6 +144,27 @@ public class ChatServer implements Runnable{
 		        String roomName = chatMessage.getChatRoom();
 		        chatRoomsMessages.computeIfAbsent(roomName, k -> new ArrayList<>()).add(chatMessage);
 		    }
+			
+			private void joinAndEnterChatRoom(String roomName, Connection connection) {
+			    if (chatRooms.containsKey(roomName)) {
+			        List<Connection> userConnections = chatRooms.get(roomName);
+			        userConnections.add(connection);
+			        connection.sendTCP(new InfoMessage("Joined chat room '" + roomName + "'."));
+			        updateUserChatRooms(connection);
+
+			  
+			        setActiveRoom(connection, roomName);
+
+			    
+			        connection.sendTCP(new InfoMessage("You are now in chat room: " + roomName));
+			    } else {
+			        connection.sendTCP(new InfoMessage("Chat room '" + roomName + "' does not exist."));
+			    }
+			}
+			
+			
+			 
+	            
 			 private void getMoreMessages(String roomName, Connection connection, int num) {
 				 List<ChatMessage> messages = getChatRoomMessages(roomName);
 				 if (messages != null && !messages.isEmpty()) {
@@ -180,35 +189,23 @@ public class ChatServer implements Runnable{
 	            }
 			
 
-			private void setActiveRoom(Connection connection, String roomName) {
-			    String userName = connectionUserMap.get(connection);
+			 private void setActiveRoom(Connection connection, String roomName) {
+				    String userName = connectionUserMap.get(connection);
 
-			    if (userName != null) {
-			        String previousActiveRoom = userActiveRoomsMap.getOrDefault(userName, "MAIN-CHAT");
+				    if (userName != null) {
+				        userActiveRoomsMap.put(userName, roomName);
+				        connectionActiveRoomMap.put(connection, roomName);
+				        updateUserChatRooms(connection);
 
-			        if (chatRooms.containsKey(roomName) && chatRooms.get(roomName).contains(connection)) {
-			            userActiveRoomsMap.put(userName, roomName);
-			            connectionActiveRoomMap.put(connection, roomName);
-			            updateUserChatRooms(connection);
+				        List<String> usersInActiveRoom = getUsersInActiveRoom(roomName);
+				        connection.sendTCP(new ListUsers(usersInActiveRoom.toArray(new String[0])));
 
-			            List<String> usersInActiveRoom = getUsersInActiveRoom(roomName);
-			            connection.sendTCP(new ListUsers(usersInActiveRoom.toArray(new String[0])));
-
-			            if (!roomName.equals(previousActiveRoom)) {
-			                connection.sendTCP(new InfoMessage("Welcome to the room: " + roomName));
-			                broadcastUserListUpdate(roomName);
-			            }
-
-			            connection.sendTCP(new InfoMessage("Active room set to: " + roomName));
-			            broadcastUserListUpdate(previousActiveRoom);
-			            broadcastUserListUpdate(roomName);
-			        } else {
-			            connection.sendTCP(new InfoMessage("You are not a member of the room '" + roomName + "'. Use /JOIN " + roomName + " to join."));
-			        }
-			    } else {
-			        connection.sendTCP(new InfoMessage("Failed to set active room. User not found."));
-			    }
-			}
+				        connection.sendTCP(new InfoMessage("Active room set to: " + roomName));
+				        broadcastUserListUpdate(roomName);
+				    } else {
+				        connection.sendTCP(new InfoMessage("Failed to set active room. User not found."));
+				    }
+				}
 
 	            
 	         
@@ -222,8 +219,8 @@ public class ChatServer implements Runnable{
 
 	                if (invitedConnection != null && invitedConnection.isConnected()) {
 	                    invitedConnection.sendTCP(new InfoMessage("User " + connectionUserMap.get(inviterConnection) +
-	                            " invited you to room '" + roomName + "'. [Type JOIN " + roomName + "]" + " to join, and [/ROOM "+ roomName + "]" +" to set active room."));
-	                    inviterConnection.sendTCP(new InfoMessage("Invitation sent to " + invitedUser + " for room '" + roomName + "'."));
+	                            " invited you to room '" + roomName + "'. [Type JOIN " + roomName + "]" + " to Join."));
+	                    inviterConnection.sendTCP(new InfoMessage("Invitation sent to " + invitedUser + " for Room '" + roomName + "'."));
 	                } else {
 	                    inviterConnection.sendTCP(new InfoMessage("User " + invitedUser + " is not online."));
 	                }
@@ -238,16 +235,6 @@ public class ChatServer implements Runnable{
 	                connection.sendTCP(new InfoMessage("Available chat rooms: " + chatRooms.keySet()));
 	            }
 
-	            private void joinChatRoom(String roomName, Connection connection) {
-	                if (chatRooms.containsKey(roomName)) {
-	                    List<Connection> userConnections = chatRooms.get(roomName);
-	                    userConnections.add(connection);
-	                    connection.sendTCP(new InfoMessage("Joined chat room '" + roomName + "'."));
-	                    updateUserChatRooms(connection);
-	                } else {
-	                    connection.sendTCP(new InfoMessage("Chat room '" + roomName + "' does not exist."));
-	                }
-	            }
 
 	            private void updateUserChatRooms(Connection connection) {
 	                String userName = connectionUserMap.get(connection);
