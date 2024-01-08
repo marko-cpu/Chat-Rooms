@@ -37,6 +37,7 @@ public class ChatServer implements Runnable{
 	private final ConcurrentMap<String, List<ChatMessage>> chatRoomsMessages = new ConcurrentHashMap<>();
 	private final ConcurrentMap<String, String> userActiveRoomsMap = new ConcurrentHashMap<>();
 	private final ConcurrentMap<String, List<String>> welcomedUsersMap = new ConcurrentHashMap<>();
+	private final ConcurrentMap<Connection, String> connectionActiveRoomMap = new ConcurrentHashMap<>();
 
 	
 	public ChatServer(int portNumber) {
@@ -119,10 +120,16 @@ public class ChatServer implements Runnable{
 	                        case "/ROOM":
 	                            if (parts.length >= 2) {
 	                                String roomName = parts[1];
-	                                setActiveRoom(connection, roomName);
+	                                String userName = connectionUserMap.get(connection);
+	                                
+	                                if (userName != null) {
+	                                    setActiveRoom(connection, roomName);
+	                                } else {
+	                                    connection.sendTCP(new InfoMessage("You haven't joined yet."));
+	                                }
 	                            }
 	                            break;
-	                            
+
 	                        case "/GETMOREMESSAGES":
 	                            if (parts.length >= 2) {
 	                                String roomName = parts[1];
@@ -138,7 +145,8 @@ public class ChatServer implements Runnable{
 	                                inviteUserToRoom(invitedUser, roomName, connection);
 	                            }
 	                            break;
-	             
+	                            
+	                   
 	                    }
 	                }
 	            
@@ -150,7 +158,7 @@ public class ChatServer implements Runnable{
 		    }
 			private void getMoreMessages(String roomName, Connection connection, int num) {
 			    if (num < 0) {
-			        throw new IllegalArgumentException("Broj poruka ne može biti manji od nule.");
+			        throw new IllegalArgumentException("Number of messages cannot be less than zero.");
 			    }
 
 			    List<ChatMessage> messages = getChatRoomMessages(roomName);
@@ -164,50 +172,40 @@ public class ChatServer implements Runnable{
 			        }
 			    }
 			}
+			
 
+			private void setActiveRoom(Connection connection, String roomName) {
+			    String userName = connectionUserMap.get(connection);
+
+			    if (userName != null) {
+			        String previousActiveRoom = userActiveRoomsMap.getOrDefault(userName, "MAIN-CHAT");
+
+			        if (chatRooms.containsKey(roomName) && chatRooms.get(roomName).contains(connection)) {
+			            userActiveRoomsMap.put(userName, roomName);
+			            connectionActiveRoomMap.put(connection, roomName);
+			            updateUserChatRooms(connection);
+
+			            List<String> usersInActiveRoom = getUsersInActiveRoom(roomName);
+			            connection.sendTCP(new ListUsers(usersInActiveRoom.toArray(new String[0])));
+
+			            if (!roomName.equals(previousActiveRoom)) {
+			                connection.sendTCP(new InfoMessage("Welcome to the room: " + roomName));
+			                broadcastUserListUpdate(roomName);
+			            }
+
+			            connection.sendTCP(new InfoMessage("Active room set to: " + roomName));
+			            broadcastUserListUpdate(previousActiveRoom);
+			            broadcastUserListUpdate(roomName);
+			        } else {
+			            connection.sendTCP(new InfoMessage("You are not a member of the room '" + roomName + "'. Use /JOIN " + roomName + " to join."));
+			        }
+			    } else {
+			        connection.sendTCP(new InfoMessage("Failed to set active room. User not found."));
+			    }
+			}
+
+	            
 	         
-	            
-	          
-	           
-	            
-	            
-	            private void setActiveRoom(Connection connection, String roomName) {
-	                String userName = connectionUserMap.get(connection);
-	                String previousActiveRoom = userActiveRoomsMap.getOrDefault(userName, "MAIN-CHAT");
-
-	                if (userName != null) {
-	                    userActiveRoomsMap.put(userName, roomName);
-	                    chatRooms.computeIfAbsent(roomName, k -> new CopyOnWriteArrayList<>()).add(connection);
-	                    updateUserChatRooms(connection);
-	                    List<String> usersInActiveRoom = getUsersInActiveRoom(roomName);
-	                    connection.sendTCP(new ListUsers(usersInActiveRoom.toArray(new String[0])));
-	                    if (!roomName.equals(previousActiveRoom)) {
-	                        connection.sendTCP(new InfoMessage("Welcome to the room: " + roomName));
-	                        broadcastUserListUpdate(roomName); 
-	                        
-	                    }
-	                    connection.sendTCP(new InfoMessage("Active room set to: " + roomName));
-	                } else {
-	                    connection.sendTCP(new InfoMessage("Failed to set active room. User not found."));
-	                }
-
-	                broadcastUserListUpdate(previousActiveRoom);
-	                broadcastUserListUpdate(roomName);
-	            }
-	            
-	            private void broadcastEditedMessage(String username, String editedText, ChatMessage og) {
-	                String chatRoom = userActiveRoomsMap.get(username);
-	                ChatMessage editedMessage = new ChatMessage(username, editedText, chatRoom);
-	                editedMessage.setTxt(editedText+" (Ed.)");
-	                if(og.getTxt().contains("replied to message:\n(")) editedMessage.setReply(true);
-	                List<ChatMessage> ls = new ArrayList<>();
-	                ls.add(og);
-	                ls.add(editedMessage);
-	                for (Connection connection : server.getConnections()) {
-	                        connection.sendTCP(ls);
-	                	}
-	            }
-				
 	            
 	            private List<ChatMessage> getChatRoomMessages(String chatRoom) {
 	                return chatRoomsMessages.get(chatRoom);
@@ -224,11 +222,6 @@ public class ChatServer implements Runnable{
 	                    inviterConnection.sendTCP(new InfoMessage("User " + invitedUser + " is not online."));
 	                }
 	            }
-
-	         
-
-	            
-	            
 
 	            private void createChatRoom(String roomName, Connection connection) {
 	                chatRooms.putIfAbsent(roomName, new CopyOnWriteArrayList<>());
@@ -264,9 +257,6 @@ public class ChatServer implements Runnable{
 	                        .filter(entry -> entry.getValue().contains(connection))
 	                        .map(Map.Entry::getKey)
 	                        .collect(Collectors.toList());
-
-	              
-
 	            }
 			
 			public void disconnected(Connection connection) {

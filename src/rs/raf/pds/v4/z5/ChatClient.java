@@ -90,7 +90,7 @@ public class ChatClient implements Runnable{
 	                    	String[] parts = message.getTxt().split(": ");
 	                    	String room = parts[1].trim();
 	                    	setActiveRoom(room);
-	                     //   client.sendTCP("/GETMOREMESSAGES"+" "+ activeRoom + "5");
+	                        client.sendTCP("/GETMOREMESSAGES"+" "+ activeRoom + "2");
 	                    	return;
 	                    }
 	                    
@@ -113,13 +113,13 @@ public class ChatClient implements Runnable{
 	private void handleChatMessages(List<ChatMessage> chatMessages) {
         if (chatMessages != null) {
         	ChatMessage old = chatMessages.get(0);
-        	ChatMessage newr = chatMessages.get(1);
-            ((ChatClient) chatMessages).handleMessageUpdate(old, newr,this.activeRoom);
+        	ChatMessage newer = chatMessages.get(1);
+            ((ChatClient) chatMessages).handleMessageUpdate(old, newer,this.activeRoom);
         }
     }
     
 	private void showChatMessage(ChatMessage chatMessage) {
-	     printToGUI("(" + activeRoom + ") " + chatMessage.getUser() + ": " + chatMessage.getTxt());
+	     printToGUI("[" + activeRoom + "] " + chatMessage.getUser() + ": " + chatMessage.getTxt());
 	}
 	private void showPrivateChatMessage(PrivateMessage privateMessage) {
         printToGUI("Private message from " + privateMessage.getSender() + ": " + privateMessage.getContent());
@@ -137,10 +137,7 @@ public class ChatClient implements Runnable{
 	 private void showMessage(String txt) {
 	        printToGUI(txt);
 	    }
-	
-	
 
-	
 	 private void printToGUI(String message) {
 		 	Platform.runLater(() -> chatMessages.handleMessage(message));
 	    }
@@ -148,10 +145,7 @@ public class ChatClient implements Runnable{
 	 private void showUsersInChatRoom(String[] users) {
 			Platform.runLater(() -> chatMessages.handleUserListUpdate(Arrays.asList(users),activeRoom));
 	    }
-
-
-	    
-	    
+ 
 	    public void handleUserListUpdate(List<String> users, String room) {
 	        if (chatMessages != null) {
 	            chatMessages.handleUserListUpdate(users, room);
@@ -191,7 +185,7 @@ public class ChatClient implements Runnable{
 	  
 	  
 	  
-	  public void processUserInput(String userInput, String activeRoom) {
+	  public void userInput(String userInput, String activeRoom) {
 	        if (userInput == null || "BYE".equalsIgnoreCase(userInput)) {
 	            running = false;
 	        } else if ("WHO".equalsIgnoreCase(userInput)) {
@@ -206,7 +200,7 @@ public class ChatClient implements Runnable{
 	        	}
 	        	String messageText = sj.toString();
 	            if (recipient == null || messageText == null) {
-	                System.out.println("Invalid PRIVATE command. Use /PRIVATE <Recipient> <Message>");
+	                System.out.println("Use /PRIVATE <Recipient> <Message>");
 	                return;
 	            }
 	            sendPrivateMessage(recipient, messageText);
@@ -221,19 +215,16 @@ public class ChatClient implements Runnable{
 	            if (parts.length >= 2) {
 	                client.sendTCP(userInput.toUpperCase());
 	            } else {
-	                System.out.println("Invalid ROOM command. Use /ROOM <roomName>");
+	                System.out.println("Use /ROOM <roomName>");
 	            }
 	        } else if (userInput.toUpperCase().startsWith("/INVITE")) {
 	            String[] parts = userInput.split(" ");
 	            if (parts.length == 3) {
 	                client.sendTCP(parts[0].toUpperCase() + " " + parts[1] + " " + parts[2].toUpperCase());
 	            } else {
-	                System.out.println("Invalid INVITE command. Use /INVITE <User> <Room>");
+	                System.out.println(" Use /INVITE <User> <Room>");
 	            }
-	        }
-	      
-	      
-	        else if(userInput.toUpperCase().startsWith("/GETMOREMESSAGES")) {
+	        } else if(userInput.toUpperCase().startsWith("/GETMOREMESSAGES")) {
 	        	String[] parts = userInput.split(" ");
 	        	String command = parts[0].toUpperCase();
 
@@ -252,10 +243,7 @@ public class ChatClient implements Runnable{
 	            }
 	        }
 	    }
-	    
-	    
-	
-	 
+
 	public void run() {
 		
 		try (
@@ -291,14 +279,14 @@ public class ChatClient implements Runnable{
 	                    if (parts.length >= 2) {
 	                        client.sendTCP(userInput.toUpperCase());
 	                    } else {
-	                        System.out.println("Invalid ROOM command. Use /ROOM <roomName>");
+	                        System.out.println("Use /ROOM <roomName>");
 	                    }
 	                } else if (userInput.toUpperCase().startsWith("/INVITE")) {
 	                    String[] parts = userInput.split(" ");
 	                    if (parts.length == 3) {
 	                        client.sendTCP(parts[0].toUpperCase() + " " + parts[1] + " " + parts[2].toUpperCase());
 	                    } else {
-	                        System.out.println("Invalid INVITE command. Use /INVITE <User> <Room>");
+	                        System.out.println("Use /INVITE <User> <Room>");
 	                    }
 	                }
 	            	else {
@@ -320,10 +308,6 @@ public class ChatClient implements Runnable{
 			client.close();;
 		}
 	}
-	
-	
-	
-	
 	
 	public String getUserName() {
 	    	return userName;

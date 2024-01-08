@@ -3,7 +3,7 @@ package rs.raf.pds.v4.z5;
 import java.util.Arrays;
 
 import java.util.List;
-import java.util.regex.Pattern;
+
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -14,7 +14,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.Labeled;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
@@ -41,6 +40,7 @@ public class ChatApp extends Application implements ChatMessages {
     private TextField inputField;
     private String activeRoom = "MAIN-CHAT";
     private ListView<String> userListView;
+
    
 
     
@@ -105,13 +105,10 @@ public class ChatApp extends Application implements ChatMessages {
 
     	messageListView = new ListView<>();
     	messageListView.setCellFactory(param -> new MessageCell());
-    	
+ 
     	messageListView.setPrefSize(500, 400);
     	
-    	
-       
-
-      
+ 
     	messageListView.setOnMouseClicked(event -> {
     	    String selectedMessage = messageListView.getSelectionModel().getSelectedItem();
     	    userListView.getSelectionModel().clearSelection();
@@ -135,17 +132,17 @@ public class ChatApp extends Application implements ChatMessages {
     	inputField.setPrefWidth(400); 
     	inputField.setPrefHeight(20); 
     	
-    
 
+        inputField.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+               userInput();
+            }
+        });
     	userListView = new ListView<>();
     	userListView.setPrefHeight(600);
     	userListView.setMaxWidth(240);
 
-    	
-
-    	
     
-   
     	VBox userListVBox = new VBox(userListView);
     	
     	userListVBox.setAlignment(Pos.CENTER);
@@ -167,7 +164,7 @@ public class ChatApp extends Application implements ChatMessages {
     	    
     	});
     	
-    	enterButton.setOnAction(e -> processUserInput());
+    	enterButton.setOnAction(e -> userInput());
 
     	HBox inputBox = new HBox(10);
     	inputBox.getChildren().addAll(inputField, new Region(), enterButton);
@@ -202,9 +199,9 @@ public class ChatApp extends Application implements ChatMessages {
     }
 
     private class MessageCell extends ListCell<String> {
-    	private final Button editButton;
+    /*	private final Button editButton;
     	
-        public MessageCell() {
+        public MessageCell() {		
             editButton = new Button("Edit");
             
             editButton.setStyle("-fx-background-color: #154c79; -fx-text-fill: white; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 5px;");
@@ -219,58 +216,58 @@ public class ChatApp extends Application implements ChatMessages {
         	    
         	});
          
-
+            editButton.setOnAction(event -> handleEditButtonClick());
         }
     	
     	
-        @Override
+        public void handleEditButtonClick() {
+        	return;
+		}*/
+
+
+		@Override
         protected void updateItem(String item, boolean empty) {
             super.updateItem(item, empty);
 
             if (empty || item == null) {
                 setText(null);
-                setGraphic(null); 
+                setGraphic(null);
+                
             } else {
                 Text messageText = new Text(item);
-               // setColorForMessage(messageText);
-                messageText.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+                Font.loadFont(getClass().getResourceAsStream("/fonts/Salsa-Regular.ttf"), 14);
+                messageText.setFont(Font.font("Salsa", 17));
                 String[] parts = item.split(":")[0].split("\\)", 2);
                 String messageUsername = (parts.length > 1) ? parts[1].trim() : "";
                 boolean isClientMessage = messageUsername.equalsIgnoreCase(chatClient.getUserName());
+                
+                if (item.startsWith("Server:")) {
+                	 
+                	 Font.loadFont(getClass().getResourceAsStream("/fonts/PlayfairDisplay-VariableFont_wght.ttf"), 14);
+                	 messageText.setFont(Font.font("PlayfairDisplay", FontWeight.BOLD, 14));
+                }
+                
                 if (isClientMessage) {
                 	Region spacer = new Region();
-                	HBox messageBox = new HBox(messageText, spacer, editButton);
+                	HBox messageBox = new HBox(messageText, spacer/*, editButton */ );
                     HBox.setHgrow(spacer, Priority.ALWAYS);
-                    
-                    setStyle("-fx-background-color: #d6d6cd; -fx-text-fill: white;");
-                    
-                    messageBox.setOnMouseClicked(e -> {
-                    	setStyle("-fx-background-color: #a7a7a0; -fx-text-fill: white;");
-                	   
-                	});
+
                     setGraphic(messageBox);
                 } else {
                 	
-                    setGraphic(new HBox(messageText));
+                	  setStyle("-fx-background-color: #eeeee4; -fx-text-fill: white;");
+                	  
+                	  setOnMouseClicked(event -> {
+                          setStyle("-fx-background-color: #bebeb6; -fx-text-fill: white;"); 
+                      });
+                      setGraphic(new HBox(messageText));
+                    
                 }
-            }
+            }		
         }
-        
-     /*  private void setColorForMessage(Text text) {
-        	text.setFill(javafx.scene.paint.Color.web("#10435b"));
-        	
-       }*/
 
-     /*   private void setColorForMessageClient(Text text) {
-        	text.setFill(javafx.scene.paint.Color.web("#10435b"));
-        }*/
-      
-     
-    
         }
-       
-    
-    
+  
     public class UserListCell extends ListCell<String> {
 
         @Override
@@ -280,9 +277,12 @@ public class ChatApp extends Application implements ChatMessages {
             if (empty || item == null) {
                 setText(null);
             } else {
+            	Font.loadFont(getClass().getResourceAsStream("/fonts/Salsa-Regular.ttf"), 14);
+                setFont(Font.font("Salsa", 17));
                 setText("-> " + item);
                 setStyle(getUserStyle());
-
+                
+                
                 setOnMouseEntered(event -> setHoverStyle());
                 setOnMouseExited(event -> setExitStyle());
             }
@@ -327,34 +327,36 @@ public class ChatApp extends Application implements ChatMessages {
         });
     }
 
-    private void processUserInput() {
-    	
+    private void userInput() {
         String userInput = inputField.getText().trim();
+
         if (!userInput.isEmpty()) {
-        	if(lastSelectedMessage == null) {
-        		if(lastSelectedUser != null) {
-        			chatClient.sendPrivateMessage(lastSelectedUser, userInput);
-        		}
-        		else {
-        		chatClient.processUserInput(userInput, activeRoom);
-        		}
-        	}
-        	else {
-        		if(lastSelectedMessage.startsWith("Private message from")) {
-        			String[] parts = lastSelectedMessage.split(":",2)[0].split(" ");
-        			String from = parts[parts.length-1];
-        			
-        			chatClient.sendPrivateMessage(from, "replied to message:\n("+lastSelectedMessage+")\n"+userInput);
-        		}
-        		else {
-        		chatClient.processUserInput("replied to message:\n("+lastSelectedMessage+")\n"+userInput, activeRoom);
-        		}
-        		}
-        	messageListView.getSelectionModel().clearSelection();
-            lastSelectedMessage = null;
+            if (lastSelectedMessage == null) {
+                if (lastSelectedUser != null) {
+                    chatClient.sendPrivateMessage(lastSelectedUser, userInput);
+                } else {
+                    chatClient.userInput(userInput, activeRoom);
+                }
+            } else {
+                if (lastSelectedMessage.startsWith("Private message from")) {
+                    String[] parts = lastSelectedMessage.split(":", 2)[0].split(" ");
+                    String from = parts[parts.length - 1];
+
+                    String replyMessage = String.format("replied to message:\n(%s)\n%s", lastSelectedMessage, userInput);
+                    chatClient.sendPrivateMessage(from, replyMessage);
+                } else {
+                    String replyMessage = String.format("replied to message:\n(%s)\n%s", lastSelectedMessage, userInput);
+                    chatClient.userInput(replyMessage, activeRoom);
+                }
+
+                messageListView.getSelectionModel().clearSelection();
+                lastSelectedMessage = null;
+            }
+
+            inputField.clear();
         }
-        inputField.clear();
     }
+
     
     private void showErrorDialog(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -367,65 +369,68 @@ public class ChatApp extends Application implements ChatMessages {
     @Override
     public void handleMessageUpdate(ChatMessage oldMessage, ChatMessage message, String room) {
         Platform.runLater(() -> {
-        	
-        	String messageText = message.format().trim();
-        	if(message.getReply()) {
-            	handleReplyUpdate(oldMessage, messageText);
-            	return;
-            }
-            else {
-            	for (int i = 0; i < messageListView.getItems().size(); i++) {
-                    String existingMessage = messageListView.getItems().get(i);
-                    	if(existingMessage.trim().equalsIgnoreCase(oldMessage.format().trim())) {
-                        messageListView.getItems().set(i, messageText);
-                        
-                    	}
-                    	else if(existingMessage.trim().contains(oldMessage.format().trim())) {
-                    		
-                    		messageListView.getItems().set(i, replaceBetweenMarkers(existingMessage.trim(), "(("+chatClient.getActiveRoom()+") "+message.getUser()+": ", ")", message.getTxt()));
-                    	}
-                    }
-            }
+            String messageText = message.format().trim();
             
+            if (message.getReply()) {
+                handleReplyUpdate(oldMessage, messageText);
+                return;
+            }
+
+            for (int i = 0; i < messageListView.getItems().size(); i++) {
+                String existingMessage = messageListView.getItems().get(i).trim();
+                String oldMessageFormat = oldMessage.format().trim();
+
+                if (existingMessage.equalsIgnoreCase(oldMessageFormat)) {
+                    messageListView.getItems().set(i, messageText);
+                } else if (existingMessage.contains(oldMessageFormat)) {
+                    String roomAndUser = "((" + chatClient.getActiveRoom() + ") " + message.getUser() + ": ";
+                    messageListView.getItems().set(i, replaceBetweenIndicesAndUpdate(existingMessage, roomAndUser, ")", message.getTxt()));
+                }
+            }
         });
     }
-    
-    
-    private String replaceBetweenMarkers(String input, String startMarker, String endMarker, String replacement) {
-        String escapedStartMarker = Pattern.quote(startMarker);
-        String escapedEndMarker = Pattern.quote(endMarker);
 
-        String[] parts = input.split(escapedStartMarker, 2);
-        if (parts.length > 1) {
-            String[] secondParts = parts[1].split(escapedEndMarker, 2);
-            if (secondParts.length > 1) {
-                return parts[0] + startMarker + replacement + endMarker + secondParts[1];
-            }
+    
+    
+    private String replaceBetweenIndicesAndUpdate(String input, String startMarker, String endMarker, String replacement) {
+        int startIndex = input.indexOf(startMarker);
+        int endIndex = input.indexOf(endMarker, startIndex + startMarker.length());
+
+        if (startIndex != -1 && endIndex != -1) {
+            return input.substring(0, startIndex) +
+                   startMarker + replacement + endMarker +
+                   input.substring(endIndex + endMarker.length());
         }
 
         return input;
     }
 
+
     private void handleReplyUpdate(ChatMessage oldMessage, String updatedMessageText) {
         Platform.runLater(() -> {
             ObservableList<String> items = messageListView.getItems();
+
             for (int i = 0; i < items.size(); i++) {
-                String existingMessage = items.get(i);
-                if (existingMessage.trim().equalsIgnoreCase(oldMessage.format().trim())) {
+                String existingMessage = items.get(i).trim();
+                String oldMessageFormat = oldMessage.format().trim();
+
+                if (existingMessage.equalsIgnoreCase(oldMessageFormat)) {
                     String pattern = ")\n";
-                    int lastIndex = oldMessage.format().lastIndexOf(pattern);
+                    int lastIndex = oldMessageFormat.lastIndexOf(pattern);
+
                     if (lastIndex != -1) {
-                        String editedMsg = updatedMessageText;
-                        String updatedFormat = oldMessage.format().substring(0, lastIndex + 4) + updatedMessageText;
+                        String updatedFormat = oldMessageFormat.substring(0, lastIndex + pattern.length()) + updatedMessageText;
                         items.set(i, updatedFormat);
                     } else {
                         items.set(i, updatedMessageText);
                     }
+
                     break;
                 }
             }
         });
     }
+
 
 
   
