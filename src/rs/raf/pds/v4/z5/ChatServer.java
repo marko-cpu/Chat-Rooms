@@ -156,22 +156,28 @@ public class ChatServer implements Runnable{
 		        String roomName = chatMessage.getChatRoom();
 		        chatRoomsMessages.computeIfAbsent(roomName, k -> new ArrayList<>()).add(chatMessage);
 		    }
-			private void getMoreMessages(String roomName, Connection connection, int num) {
-			    if (num < 0) {
-			        throw new IllegalArgumentException("Number of messages cannot be less than zero.");
-			    }
+			 private void getMoreMessages(String roomName, Connection connection, int num) {
+				 List<ChatMessage> messages = getChatRoomMessages(roomName);
+				 if (messages != null && !messages.isEmpty()) {
+				     int maxMessages = num; 
+				     int totalMessages = messages.size();
+				     
+				    
+				     if (num > totalMessages) {
+				         num = totalMessages;
+				     }
 
-			    List<ChatMessage> messages = getChatRoomMessages(roomName);
-			    if (messages != null) {
-			        int maxMessages = num;
-			        int startIndex = Math.max(0, messages.size() - maxMessages);
-			        List<ChatMessage> lastMessages = messages.subList(startIndex, messages.size());
+				     int startIndex = Math.max(0, totalMessages - maxMessages);
+				     List<ChatMessage> lastMessages = messages.subList(startIndex, totalMessages);
 
-			        for (ChatMessage message : lastMessages) {
-			            connection.sendTCP(message);
-			        }
-			    }
-			}
+				     for (ChatMessage message : lastMessages) {
+				         connection.sendTCP(message);
+				     }
+				 } else {
+				     connection.sendTCP(new InfoMessage("Chat room '" + roomName + "' has no messages yet."));
+				 }
+
+	            }
 			
 
 			private void setActiveRoom(Connection connection, String roomName) {

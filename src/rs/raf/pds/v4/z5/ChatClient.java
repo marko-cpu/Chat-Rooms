@@ -90,7 +90,7 @@ public class ChatClient implements Runnable{
 	                    	String[] parts = message.getTxt().split(": ");
 	                    	String room = parts[1].trim();
 	                    	setActiveRoom(room);
-	                        client.sendTCP("/GETMOREMESSAGES"+" "+ activeRoom + "2");
+	                       
 	                    	return;
 	                    }
 	                    

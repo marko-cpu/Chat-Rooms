@@ -277,8 +277,6 @@ public class ChatApp extends Application implements ChatMessages {
             if (empty || item == null) {
                 setText(null);
             } else {
-            	Font.loadFont(getClass().getResourceAsStream("/fonts/Salsa-Regular.ttf"), 14);
-                setFont(Font.font("Salsa", 17));
                 setText("-> " + item);
                 setStyle(getUserStyle());
                 
