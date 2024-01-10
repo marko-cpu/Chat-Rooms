@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.esotericsoftware.kryonet.Connection;
@@ -132,19 +131,115 @@ public class ChatServer implements Runnable{
 	                                inviteUserToRoom(invitedUser, roomName, connection);
 	                            }
 	                            break;
-	                       
-	                            
-	                   
+	                        case "/EDIT#":
+	                            String[] commandParts = command.split("#");
+
+	                            if (commandParts.length >= 3) {
+	                            	String editedMessage = commandParts[1];
+	                                String originalMessage = commandParts[2];
+	                                
+	                                editChatRoomMessage(connection, originalMessage, editedMessage);
+	                            } else {
+	                              
+	                                System.out.println("Invalid command format for editing message.");
+	                            }
+	                            break;
+
 	                    }
 	                }
 	            
 			}
 			
 			private void addMessageToChatRoom(ChatMessage chatMessage) {
-		        String roomName = chatMessage.getChatRoom();
-		        chatRoomsMessages.computeIfAbsent(roomName, k -> new ArrayList<>()).add(chatMessage);
-		    }
-			
+			    chatRoomsMessages
+			        .computeIfAbsent(chatMessage.getChatRoom(), k -> new ArrayList<>())
+			        .add(chatMessage);
+			}
+
+			private void editChatRoomMessage(Connection connection, String originalMessage, String editedText) {
+			    if (connection == null || editedText == null || editedText.trim().isEmpty()) {
+			        handleInvalidParameters(connection);
+			        return;
+			    }
+
+			    String[] messageParts = extractMessageParts(originalMessage);
+			    if (messageParts.length == 2) {
+			        processValidMessage(connection, messageParts, editedText);
+			    } else {
+			        handleInvalidMessageFormat(connection);
+			    }
+			}
+
+			private void handleInvalidParameters(Connection connection) {
+			    connection.sendTCP(new InfoMessage("Invalid parameters for editing message."));
+			}
+
+			private String[] extractMessageParts(String originalMessage) {
+			    return originalMessage.split(":", 2);
+			}
+
+			private void processValidMessage(Connection connection, String[] messageParts, String editedText) {
+			    String username = connectionUserMap.get(connection);
+			    String room = userActiveRoomsMap.get(username);
+			    String originalText = messageParts[1].trim();
+			    String editedMessage = editedText;
+			    
+			    updateChatRoomsMessages(username, originalText, editedMessage);
+			    
+			    ChatMessage oldMessage = createChatMessage(username, originalText, room);
+			    broadcastEditedMessage(username, editedMessage, oldMessage);
+			}
+
+			private void handleInvalidMessageFormat(Connection connection) {
+			    connection.sendTCP(new InfoMessage("Invalid message format."));
+			}
+
+			private ChatMessage createChatMessage(String username, String originalText, String room) {
+			    return new ChatMessage(username, originalText, room);
+			}
+
+		
+
+			private void updateChatRoomsMessages(String username, String originalText, String editedText) {
+			    String chatRoom = userActiveRoomsMap.get(username);
+
+			    chatRoomsMessages.compute(chatRoom, (key, messages) -> {
+			        if (messages != null) {
+			            messages.forEach(message -> {
+			                if (originalText.equalsIgnoreCase(message.getTxt())) {
+			                        message.setTxt(editedText + " - Ed.");
+			                    }			  
+			                if (message.getTxt().contains(originalText)) {
+			                    ChatMessage temp = new ChatMessage(username, editedText + " - Ed.)", chatRoom);
+			                    String replacementText = temp.getTxt();
+			                    message.setTxt(replacementText);
+			                
+			                }
+			            });
+			        }
+			        return messages;
+			    });
+			}
+
+			private void broadcastEditedMessage(String username, String editedText, ChatMessage originalMessage) {
+			    String chatRoom = userActiveRoomsMap.get(username);
+			    ChatMessage editedMessage = new ChatMessage(username, editedText, chatRoom);
+			    editedMessage.setTxt(editedText + " - Ed.");
+
+			    List<ChatMessage> messagesToSend = new ArrayList<>();
+			    messagesToSend.add(originalMessage);
+			    messagesToSend.add(editedMessage);
+
+			    Connection[] connections = server.getConnections();
+			    if (connections != null && connections.length > 0) {
+			        for (Connection connection : connections) {
+			            connection.sendTCP(messagesToSend);
+			        }
+			    }
+			}
+
+
+	            
 			private void joinAndEnterChatRoom(String roomName, Connection connection) {
 			    if (chatRooms.containsKey(roomName)) {
 			        List<Connection> userConnections = chatRooms.get(roomName);
@@ -256,7 +351,10 @@ public class ChatServer implements Runnable{
 				String user = connectionUserMap.get(connection);
 				connectionUserMap.remove(connection);
 				userConnectionMap.remove(user);
-				showTextToAll(user+" has disconnected!", connection);
+				String disconnectMessage = "[" + user + "]" + " has disconnected!";
+
+				showTextToAll(disconnectMessage, connection);
+
 			}
 		});
 	}
@@ -331,7 +429,7 @@ public class ChatServer implements Runnable{
        
         if (welcomedUsersMap.computeIfAbsent(activeRoom, k -> new ArrayList<>()).contains(userName)) {
             
-            System.out.println("User " + userName + " has connected again!");
+            System.out.println("[" + userName + "]" + " has connected again!");
         } else {
             
             conn.sendTCP(new InfoMessage("Welcome to the room: " + activeRoom));
@@ -340,7 +438,7 @@ public class ChatServer implements Runnable{
         }
 
        
-        showTextToAll("User " + userName + " has connected!", conn);
+        showTextToAll("[" + userName + "]" + " has connected!", conn);
     
         broadcastUserListUpdate(activeRoom);
     }
@@ -376,13 +474,14 @@ public class ChatServer implements Runnable{
         }
     }
 
-    private void showTextToAll(String txt, Connection exception) {
-        System.out.println(txt);
-        for (Connection conn : userConnectionMap.values()) {
-            if (conn.isConnected() && conn != exception)
-                conn.sendTCP(new InfoMessage(txt));
-        }
+    private void showTextToAll(String message, Connection excludedConnection) {
+        InfoMessage infoMessage = new InfoMessage(message);
+
+        userConnectionMap.values().stream()
+                .filter(conn -> conn.isConnected() && conn != excludedConnection)
+                .forEach(conn -> conn.sendTCP(infoMessage));
     }
+
 
     
     

@@ -3,11 +3,11 @@ package rs.raf.pds.v4.z5;
 import java.util.Arrays;
 
 
+
 import java.util.List;
-
-
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -24,6 +24,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -223,7 +224,14 @@ public class ChatApp extends Application implements ChatMessages {
         public void handleEditButtonClick() {
         	  System.out.println("Edit button clicked");
         	  
+        	  String selectedMessage = getItem();
+        	 
+              String userInput = inputField.getText().trim();
+        	  if (!userInput.isEmpty()) {
+                  chatClient.userInput("/EDIT# "+userInput+"#"+selectedMessage,activeRoom);
+                  inputField.clear();
 		}
+        }
 
 
 		@Override
@@ -241,19 +249,23 @@ public class ChatApp extends Application implements ChatMessages {
                 String[] parts = item.split(":")[0].split("\\)", 2);
                 String messageUsername = (parts.length > 1) ? parts[1].trim() : "";
                 boolean isClientMessage = messageUsername.equalsIgnoreCase(chatClient.getUserName());
-                
+               
                 if (item.startsWith("Server:")) {
                 	
                 	 Font.loadFont(getClass().getResourceAsStream("/fonts/PlayfairDisplay-VariableFont_wght.ttf"), 14);
                 	 messageText.setFont(Font.font("PlayfairDisplay", FontWeight.BOLD, 14));
                 	  editButton.setVisible(false);
-                } else {
+                } else if(item.startsWith("Private message from")){
+                	editButton.setVisible(false);
+                }
+                else {
                     editButton.setVisible(true); 
                 }
                 
                 if (isClientMessage) {
                 	Region spacer = new Region();
                 	HBox messageBox = new HBox(messageText, spacer, editButton );
+                	 messageBox.setAlignment(Pos.CENTER);
                     HBox.setHgrow(spacer, Priority.ALWAYS);
 
                     setGraphic(messageBox);
@@ -266,8 +278,11 @@ public class ChatApp extends Application implements ChatMessages {
                       });
                 	  Region spacer = new Region();
                 	  HBox.setHgrow(spacer, Priority.ALWAYS);
-                      setGraphic(new HBox(messageText,spacer,editButton));
-                      
+                	  HBox messageBox = new HBox(messageText, spacer, editButton);
+                      messageBox.setAlignment(Pos.CENTER);
+                      messageBox.setStyle("-fx-padding: 5px 0;");
+
+                      setGraphic(messageBox);
                     
                 }
             }		
@@ -276,6 +291,13 @@ public class ChatApp extends Application implements ChatMessages {
         }
   
     public class UserListCell extends ListCell<String> {
+        private static final String USER_STYLE_NORMAL = "-fx-background-color: #e1ecf4; -fx-text-fill: #10435b; -fx-padding: 5 10; -fx-font-size: 14px; -fx-border-width: 1; -fx-border-color: #c4d7ed;";
+        private static final String USER_STYLE_HOVER = "-fx-background-color: #92cbdf; -fx-text-fill: white; -fx-padding: 5 10; -fx-font-size: 14px; -fx-border-width: 1; -fx-border-color: #c4d7ed;";
+        private static final String USER_PRESSED = "-fx-background-color: #e1ecf4; -fx-text-fill: #10435b; -fx-padding: 5 10; -fx-font-size: 14px; -fx-border-width: 1; -fx-border-color: #c4d7ed;";
+
+        private static final int CIRCLE_LABEL_MARGIN_RIGHT = 80;
+
+     
 
         @Override
         protected void updateItem(String item, boolean empty) {
@@ -284,51 +306,85 @@ public class ChatApp extends Application implements ChatMessages {
             if (empty || item == null) {
                 setText(null);
             } else {
-                setText("-> " + item);
-                setStyle(getUserStyle());
-                
-                
-                setOnMouseEntered(event -> setHoverStyle());
-                setOnMouseExited(event -> setExitStyle());
+                HBox container = new HBox();
+
+                Label nameLabel = new Label("-> " + item);
+                nameLabel.setMinWidth(120); 
+                nameLabel.setMaxWidth(120);
+                nameLabel.setStyle("-fx-text-fill: #10435b; -fx-font-size: 14px;");
+                nameLabel.setStyle("-fx-font-weight: bold;");
+
+                StackPane stackPane = new StackPane();
+                Label circleLabel = new Label("●");
+                if (item != null && item.startsWith("Server:") && item.contains("has disconnected!")) {
+                    String disconnectedUser = item.substring(item.indexOf("[") + 1, item.indexOf("]"));
+                    boolean isDisconnectedUser = disconnectedUser.equals(item.substring(item.indexOf("["), item.indexOf("]")));
+                    if (isDisconnectedUser) {
+                        circleLabel.setStyle("-fx-text-fill: #FF0000;");
+                    } else {
+                        circleLabel.setStyle("-fx-text-fill: #00FF00;");
+                    }
+                } else {
+                    
+                    circleLabel.setStyle("-fx-text-fill: #00FF00;");
+                }
+
+
+                stackPane.getChildren().add(circleLabel);
+               // stackPane.setStyle("-fx-alignment: CENTER_RIGHT;");
+
+                StackPane.setMargin(circleLabel, new Insets(0, 0, 0, CIRCLE_LABEL_MARGIN_RIGHT));
+
+                container.getChildren().addAll(nameLabel, stackPane);
+
+                setGraphic(container);
+                setStyle(USER_STYLE_NORMAL);
+                setOnMouseEntered(event -> setStyle(USER_STYLE_HOVER));
+                setOnMouseExited(event -> setStyle(USER_STYLE_NORMAL));
+                setOnMousePressed(event -> setStyle(USER_PRESSED));
             }
-        }
-
-        private String getUserStyle() {
-            return "-fx-background-color: #e1ecf4; " +
-                   "-fx-text-fill: #10435b; " +
-                   "-fx-padding: 5 10; " +
-                   "-fx-font-size: 14px; " +
-                   "-fx-border-width: 1; " +
-                   "-fx-border-color: #c4d7ed;";
-        }
-
-        private void setHoverStyle() {
-            setStyle("-fx-background-color: #92cbdf; " +
-                     "-fx-text-fill: white; " +
-                     "-fx-padding: 5 10; " +
-                     "-fx-font-size: 14px; " +
-                     "-fx-border-width: 1; " +
-                     "-fx-border-color: #c4d7ed;");
-        }
-
-        private void setExitStyle() {
-            setStyle(getUserStyle());
         }
     }
 
+    
+    @Override
+    public void handleMessageUpdate(ChatMessage oldMessage, ChatMessage message, String room) {
+        Platform.runLater(() -> {
+            System.out.println("Old Message Format: " + oldMessage.toString().trim());
+            System.out.println("Message Format: " + message.toString().trim());
+
+            String messageText = message.toString().trim();
+
+           
+                ObservableList<String> items = messageListView.getItems();
+
+                for (int i = 0; i < items.size(); i++) {
+                    String existingMessage = items.get(i).trim();
+
+                    if (existingMessage.equalsIgnoreCase(oldMessage.toString().trim())) {
+                        items.remove(i);  
+                        items.add(i, messageText);  
+                        break;  
+                    }
+                }
+            
+        });
+    }
 
     @Override
     public void handleUserListUpdate(List<String> users, String room) {
         Platform.runLater(() -> {
-            if (userListView.getItems().isEmpty()) {
-                userListView.getItems().addAll(users);
-            } else {
-                userListView.getItems().clear();
-                userListView.getItems().addAll(users);
-            }
+            ObservableList<String> userList = userListView.getItems();
+
+           
+            userList.removeIf(user -> !users.contains(user));
+
+            
+            users.stream()
+                 .filter(user -> !userList.contains(user))
+                 .forEach(userList::add);
 
             activeRoom = room;
-            
         });
     }
 
@@ -370,12 +426,5 @@ public class ChatApp extends Application implements ChatMessages {
         alert.setContentText(message);
         alert.showAndWait();
     }
-    @Override
-    public void handleMessageUpdate(ChatMessage oldMessage, ChatMessage message, String room) {}
-  
-
-
-
-
   
 }

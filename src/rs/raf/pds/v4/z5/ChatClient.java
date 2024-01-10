@@ -3,6 +3,7 @@ package rs.raf.pds.v4.z5;
 import java.io.BufferedReader;
 
 
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
@@ -83,6 +84,10 @@ public class ChatClient implements Runnable{
                     	showUsersInChatRoom(listUsers.getUsers());
                     }
 				}
+				if(object instanceof List) {
+                	handleChatMessages((List<ChatMessage>) object);
+                	
+                }
 				
 				 if (object instanceof InfoMessage) {
 	                    InfoMessage message = (InfoMessage) object;
@@ -97,16 +102,10 @@ public class ChatClient implements Runnable{
 	                    showMessage("Server: " + message.getTxt());
 	                    return;
 	                }
-				if(object instanceof List) {
-                	handleChatMessages((List<ChatMessage>) object);
-                	
-                }
+				
           
 			}
-			
-			public void disconnected(Connection connection) {
-				
-			}
+		
 		});
 	}
 	
@@ -127,13 +126,14 @@ public class ChatClient implements Runnable{
     }
 	
 	private void showOnlineUsers(String[] users) {
-		String message = "Server: Active users: ";
-        for (int i = 0; i < users.length; i++) {
-            String user = users[i];
-            message += user + ((i == users.length - 1) ? "" : ", ");
-        }
-        printToGUI(message);
+	    StringJoiner joiner = new StringJoiner(", ");
+	    for (String user : users) {
+	        joiner.add(user);
+	    }
+	    String message = "Server: Active users: " + joiner.toString();
+	    printToGUI(message);
 	}
+
 	
 	 private void showMessage(String txt) {
 	        printToGUI(txt);
@@ -211,7 +211,10 @@ public class ChatClient implements Runnable{
 	            client.sendTCP(userInput.toUpperCase());
 	        } else if (userInput.toUpperCase().startsWith("/JOIN")) {
 	            client.sendTCP(userInput.toUpperCase());
-	        } else if (userInput.toUpperCase().startsWith("/INVITE")) {
+	        }else if (userInput.toUpperCase().startsWith("/EDIT#")) {
+	            client.sendTCP(userInput);
+	        }
+	        else if (userInput.toUpperCase().startsWith("/INVITE")) {
 	            String[] parts = userInput.split(" ");
 	            if (parts.length == 3) {
 	                client.sendTCP(parts[0].toUpperCase() + " " + parts[1] + " " + parts[2].toUpperCase());
@@ -242,7 +245,7 @@ public class ChatClient implements Runnable{
 		
 		try (
 				BufferedReader stdIn = new BufferedReader(
-	                    new InputStreamReader(System.in))	// Za čitanje sa standardnog ulaza - tastature!
+	                    new InputStreamReader(System.in))	
 	        ) {
 					            
 				String userInput;
@@ -250,7 +253,7 @@ public class ChatClient implements Runnable{
 				
 	            while (running) {
 	            	userInput = stdIn.readLine();
-	            	if (userInput == null || "BYE".equalsIgnoreCase(userInput)) // userInput - tekst koji je unet sa tastature!
+	            	if (userInput == null || "BYE".equalsIgnoreCase(userInput)) 
 	            	{
 	            		running = false;
 	            	}
