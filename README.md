@@ -16,7 +16,7 @@ This is a straightforward chat application. Users can send private messages, cre
 
 - **Join Chat Room:** Connect to a specific room using the `Join /room_name` command.
 
-- **Message Editing:** Edit previously sent messages with a right-click and notify others.
+- **Message Editing:** Edit previously sent messages and notify others.
 
 - **Requesting More Messages:** Users can request additional messages with `GetMoreMessages /chat_room`.
 
