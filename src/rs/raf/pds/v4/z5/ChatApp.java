@@ -317,15 +317,10 @@ public class ChatApp extends Application implements ChatMessages {
                 StackPane stackPane = new StackPane();
                 Label circleLabel = new Label("●");
                 if (item != null && item.startsWith("Server:") && item.contains("has disconnected!")) {
-                    String disconnectedUser = item.substring(item.indexOf("[") + 1, item.indexOf("]"));
-                    boolean isDisconnectedUser = disconnectedUser.equals(item.substring(item.indexOf("["), item.indexOf("]")));
-                    if (isDisconnectedUser) {
-                        circleLabel.setStyle("-fx-text-fill: #FF0000;");
-                    } else {
-                        circleLabel.setStyle("-fx-text-fill: #00FF00;");
-                    }
-                } else {
                     
+                    circleLabel.setStyle("-fx-text-fill: #FF0000;");
+                    
+                } else {
                     circleLabel.setStyle("-fx-text-fill: #00FF00;");
                 }
 
@@ -403,10 +398,10 @@ public class ChatApp extends Application implements ChatMessages {
                     String[] parts = lastSelectedMessage.split(":", 2)[0].split(" ");
                     String from = parts[parts.length - 1];
 
-                    String replyMessage = String.format("replied to message:\n(%s)\n%s", lastSelectedMessage, userInput);
+                    String replyMessage = String.format("replied to message:\n(%s) ->%s", lastSelectedMessage, userInput);
                     chatClient.sendPrivateMessage(from, replyMessage);
                 } else {
-                    String replyMessage = String.format("replied to message:\n(%s)\n%s", lastSelectedMessage, userInput);
+                    String replyMessage = String.format("replied to message:\n(%s) ->%s", lastSelectedMessage, userInput);
                     chatClient.userInput(replyMessage, activeRoom);
                 }
 

@@ -210,7 +210,7 @@ public class ChatServer implements Runnable{
 			                        message.setTxt(editedText + " - Ed.");
 			                    }			  
 			                if (message.getTxt().contains(originalText)) {
-			                    ChatMessage temp = new ChatMessage(username, editedText + " - Ed.)", chatRoom);
+			                    ChatMessage temp = new ChatMessage(username, editedText + " - Ed.", chatRoom);
 			                    String replacementText = temp.getTxt();
 			                    message.setTxt(replacementText);
 			                
@@ -360,16 +360,15 @@ public class ChatServer implements Runnable{
 	}
 	
 	private void broadcastUserListUpdate(String roomName) {
-        List<Connection> connections = chatRooms.get(roomName);
+        
         List<String> usersInActiveRoom = getUsersInActiveRoom(roomName);
-        for (String username : usersInActiveRoom) {
-        }
+        
         for (String username : usersInActiveRoom) {
         	Connection connection = userConnectionMap.get(username);
             if (connection.isConnected()) {
-            	ListUsers lsu = new ListUsers(usersInActiveRoom.toArray(new String[0]));
-            	lsu.setChecker(true);
-                connection.sendTCP(lsu);
+            	ListUsers listuser = new ListUsers(usersInActiveRoom.toArray(new String[0]));
+            	listuser.setChecker(true);
+                connection.sendTCP(listuser);
             }
             
         }
