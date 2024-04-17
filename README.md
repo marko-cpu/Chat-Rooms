@@ -1,4 +1,4 @@
-# ChatRooms-Java
+# <div align="center">ChatRooms-Java</div>
 
 ## Overview
 
